@@ -38,14 +38,16 @@ impl UART {
     }
 
     pub fn putx(&self, n: u32) {
+
         self.puts("0x");
 
         let mut c: u8;
 
         for i in 0..8 {
             let d: u8 = n.wrapping_shr(32 - 4 - i * 4) as u8 & 0xf;
+
             if d > 9 {
-                c = d + 0x41 - 0xa;
+                c = d + 'A' as u8 - 0xa;
             } else {
                 c = d + '0' as u8;
             }
