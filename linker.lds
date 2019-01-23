@@ -1,3 +1,5 @@
+STACK_START = 0x80010000;
+
 MEMORY { .SRAM : ORIGIN = 0x2e000000, LENGTH = 0xffffff }
 
 OUTPUT_FORMAT("elf64-littleaarch64")
