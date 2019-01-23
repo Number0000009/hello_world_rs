@@ -1,2 +1,5 @@
 [build]
-rustflags = [ "-Clink-arg=-Tlinker.lds", ]
+rustflags = [
+    "-Clink-arg=-Tlinker.lds",
+    "-Ctarget-feature=+strict-align"
+]
