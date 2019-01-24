@@ -8,4 +8,20 @@ impl LEDs {
     pub fn new() -> LEDs {
         LEDs
     }
+
+    fn light_mask(&self, mask: u8) {
+        unsafe {
+        let leds_ptr: *mut u8 = LEDs::FVP_SYSREG_SYSLEDS as *mut u8;
+        *leds_ptr = mask;
+        asm!("dsb nsh");
+        }
+    }
+
+    pub fn light_ok(&self) {
+        self.light_mask(0xaa as u8);
+    }
+
+    pub fn light_failure(&self) {
+        self.light_mask(0x55 as u8);
+    }
 }
