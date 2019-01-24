@@ -17,6 +17,18 @@ mod MMU;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
+
+    UART::UART::new().puts("\n***PANIC!***");
+
+    if let Some(location) = _info.location() {
+        UART::UART::new().puts(" at the ");
+        UART::UART::new().puts(location.file());
+        UART::UART::new().puts("\nline# ");
+        UART::UART::new().putu(location.line());
+    }
+
+    UART::UART::new().puts("\n");
+
     loop {}
 }
 
