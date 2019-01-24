@@ -2,7 +2,7 @@ pub struct UART;
 
 impl UART {
 
-    const PL011_UART0: u32 = 0x1c090000;                // UART0 base MMIO
+    const PL011_UART0: u32 = 0x1c09_0000;               // UART0 base MMIO
     const PL011_UARTFR: u32 = UART::PL011_UART0 + 0x18; // UART0 Flag register
     const UART_TXFE: u8 = (1<<7);                       // TXFE - Transmit FIFO empty
 
