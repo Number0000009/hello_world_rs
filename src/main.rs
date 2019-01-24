@@ -18,6 +18,8 @@ mod MMU;
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
 
+    LEDs::LEDs::new().light_failure();
+
     UART::UART::new().puts("\n***PANIC!***");
 
     if let Some(location) = _info.location() {
