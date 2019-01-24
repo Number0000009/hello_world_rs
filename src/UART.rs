@@ -55,7 +55,7 @@ impl UART {
         }
     }
 
-    pub fn putu(&self, _n: u32) {
+    pub fn putu32(&self, _n: u32) {
 // tfw no_std ._.
         const RADIX: u8 = 10;
 

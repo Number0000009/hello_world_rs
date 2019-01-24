@@ -24,7 +24,7 @@ fn panic(_info: &PanicInfo) -> ! {
         UART::UART::new().puts(" at the ");
         UART::UART::new().puts(location.file());
         UART::UART::new().puts("\nline# ");
-        UART::UART::new().putu(location.line());
+        UART::UART::new().putu32(location.line());
     }
 
     UART::UART::new().puts("\n");
@@ -43,7 +43,7 @@ pub extern "C" fn _start() -> ! {
     UART.puts("Currently at EL");
 
     let el = CPU.get_current_EL();
-    UART.putu(el as u32);
+    UART.putu32(el as u32);
     UART.puts("\n");
 
     assert_eq!(el, 3);
@@ -51,7 +51,7 @@ pub extern "C" fn _start() -> ! {
     CPU.goto_EL(CPU::EL::EL2t);
 
     UART.puts("And now at EL");
-    UART.putu(CPU.get_current_EL() as u32);
+    UART.putu32(CPU.get_current_EL() as u32);
     UART.puts("\n");
 
     loop {}
