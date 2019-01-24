@@ -13,7 +13,6 @@ impl LEDs {
         unsafe {
         let leds_ptr: *mut u8 = LEDs::FVP_SYSREG_SYSLEDS as *mut u8;
         *leds_ptr = mask;
-        asm!("dsb nsh");
         }
     }
 

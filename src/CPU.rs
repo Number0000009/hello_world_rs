@@ -1,5 +1,7 @@
 pub struct CPU;
 
+use super::LEDs;
+
 pub enum EL {
     EL0t = 0b0000,
     EL1t = 0b0100,
@@ -59,9 +61,21 @@ impl CPU {
         }
     }
 
-    pub fn stop_ok(&self) {
+    fn stop(&self) -> ! {
+        unsafe {
+        asm!("dsb nsh");
+        }
+
+        loop {}
     }
 
-    pub fn stop_fail(&self) {
+    pub fn stop_ok(&self) -> ! {
+        LEDs::LEDs.light_ok();
+        self.stop();
+    }
+
+    pub fn stop_fail(&self) -> ! {
+        LEDs::LEDs.light_failure();
+        self.stop();
     }
 }

@@ -31,7 +31,7 @@ fn panic(_info: &PanicInfo) -> ! {
 
     UART::UART::new().puts("\n");
 
-    loop {}
+    CPU::CPU::new().stop_fail();
 }
 
 #[no_mangle]
@@ -56,7 +56,10 @@ pub extern "C" fn _start() -> ! {
     UART.putu32(CPU.get_current_EL() as u32);
     UART.puts("\n");
 
-    loop {}
+    let LEDs = LEDs::LEDs::new();
+    LEDs.light_ok();
+
+    CPU::CPU::new().stop_ok();
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() {}
