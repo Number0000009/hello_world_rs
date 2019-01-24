@@ -39,11 +39,19 @@ pub extern "C" fn _start() -> ! {
     CPU.init();
 
     let UART = UART::UART::new();
-    UART.puts("hello\nworld!\n");
 
-    UART.putx(0x11223344);
+    UART.puts("Currently at EL");
+
+    let el = CPU.get_current_EL();
+    UART.putu(el as u32);
     UART.puts("\n");
-    UART.putx(0x1122AABB);
+
+    assert_eq!(el, 3);
+
+    CPU.goto_EL(CPU::EL::EL2t);
+
+    UART.puts("And now at EL");
+    UART.putu(CPU.get_current_EL() as u32);
     UART.puts("\n");
 
     loop {}
