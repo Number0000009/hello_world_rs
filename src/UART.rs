@@ -74,7 +74,12 @@ impl UART {
         }
     }
 
-    pub fn putd(&self, n: i32) {
+    pub fn puti32(&self, _n: i32) {
 
+        if _n < 0 {
+            self.putc('-');
+        }
+
+        self.putu32(_n.abs() as u32);
     }
 }
