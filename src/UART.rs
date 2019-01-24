@@ -54,4 +54,27 @@ impl UART {
             self.putc(c as char);
         }
     }
+
+    pub fn putu(&self, _n: u32) {
+// tfw no_std ._.
+        const RADIX: u8 = 10;
+
+        let mut n = _n;
+        let mut nn = 0;
+
+        while n > 0 {
+            nn = nn * RADIX as u32 + (n % RADIX as u32);
+            n = n / RADIX as u32;
+        }
+
+        while nn > 0 {
+            let c: u8 = ((nn % RADIX as u32) + '0' as u32) as u8;
+            self.putc(c as char);
+            nn = nn / RADIX as u32;
+        }
+    }
+
+    pub fn putd(&self, n: i32) {
+
+    }
 }
