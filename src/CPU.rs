@@ -12,10 +12,6 @@ pub enum EL {
 
 impl CPU {
 
-    pub fn new() -> CPU {
-        CPU
-    }
-
     pub fn init(&self) {
         let mpidr_el1: u32;
 

@@ -10,56 +10,52 @@
 
 use core::panic::PanicInfo;
 
-mod UART;
 mod LEDs;
+mod UART;
 mod CPU;
 mod MMU;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
 
-    LEDs::LEDs::new().light_failure();
-
-    UART::UART::new().puts("\n***PANIC!***");
+    UART::UART.puts("\n***PANIC!***");
 
     if let Some(location) = _info.location() {
-        UART::UART::new().puts(" at the ");
-        UART::UART::new().puts(location.file());
-        UART::UART::new().puts("\nline# ");
-        UART::UART::new().putu32(location.line());
+        UART::UART.puts(" at the ");
+        UART::UART.puts(location.file());
+        UART::UART.puts("\nline# ");
+        UART::UART.putu32(location.line());
     }
 
-    UART::UART::new().puts("\n");
+    UART::UART.puts("\n");
 
-    CPU::CPU::new().stop_fail();
+    CPU::CPU.stop_fail();
 }
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
 
-    let CPU = CPU::CPU::new();
-    CPU.init();
+    CPU::CPU.init();
 
-    let UART = UART::UART::new();
+    UART::UART.puts("Currently at EL");
 
-    UART.puts("Currently at EL");
-
-    let el = CPU.get_current_EL();
-    UART.putu32(el as u32);
-    UART.puts("\n");
+    let mut el = CPU::CPU.get_current_EL();
+    UART::UART.putu32(el as u32);
+    UART::UART.puts("\n");
 
     assert_eq!(el, 3);
 
-    CPU.goto_EL(CPU::EL::EL2t);
+    CPU::CPU.goto_EL(CPU::EL::EL2t);
 
-    UART.puts("And now at EL");
-    UART.putu32(CPU.get_current_EL() as u32);
-    UART.puts("\n");
+    UART::UART.puts("And now at EL");
 
-    let LEDs = LEDs::LEDs::new();
-    LEDs.light_ok();
+    el = CPU::CPU.get_current_EL();
+    UART::UART.putu32(el as u32);
+    assert_eq!(el, 2);
 
-    CPU::CPU::new().stop_ok();
+    UART::UART.puts("\n");
+
+    CPU::CPU.stop_ok();
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() {}
