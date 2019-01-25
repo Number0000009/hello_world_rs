@@ -62,11 +62,10 @@ impl CPU {
     }
 
     fn stop(&self) -> ! {
-        unsafe {
-        asm!("dsb nsh");
+        unsafe { asm!("dsb nsh"); }
+        loop {
+        unsafe { asm!("wfe"); }
         }
-
-        loop {}
     }
 
     pub fn stop_ok(&self) -> ! {
