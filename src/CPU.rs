@@ -20,10 +20,9 @@ impl CPU {
         }
 
         if mpidr_el1 as u8 & 0xf != 0 {
-            unsafe {
-            asm!("wfe");
+            loop {
+                unsafe { asm!("wfe"); }
             }
-            loop {}
         }
 
         unsafe {
@@ -60,7 +59,7 @@ impl CPU {
     fn stop(&self) -> ! {
         unsafe { asm!("dsb nsh"); }
         loop {
-        unsafe { asm!("wfe"); }
+            unsafe { asm!("wfe"); }
         }
     }
 
