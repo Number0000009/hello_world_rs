@@ -33,21 +33,34 @@ impl UART {
         }
     }
 
-    pub fn putx(&self, n: u32) {
+    fn putxb(&self, d: u8) {
+
+        let c: u8;
+
+        if d > 9 {
+            c = d + 'A' as u8 - 0xa;
+        } else {
+            c = d + '0' as u8;
+        }
+        self.putc(c as char);
+    }
+
+// TODO: generics. How to size_of with no_std?
+    pub fn putx32(&self, n: u32) {
 
         self.puts("0x");
 
-        let mut c: u8;
-
         for i in 0..8 {
-            let d: u8 = n.wrapping_shr(32 - 4 - i * 4) as u8 & 0xf;
+            self.putxb(n.wrapping_shr(32 - 4 - i * 4) as u8 & 0xf);
+        }
+    }
 
-            if d > 9 {
-                c = d + 'A' as u8 - 0xa;
-            } else {
-                c = d + '0' as u8;
-            }
-            self.putc(c as char);
+    pub fn putx64(&self, n: u64) {
+
+        self.puts("0x");
+
+        for i in 0..16 {
+            self.putxb(n.wrapping_shr(64 - 4 - i * 4) as u8 & 0xf);
         }
     }
 
