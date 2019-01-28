@@ -58,6 +58,11 @@ impl UART {
         let mut n = _n;
         let mut nn = 0;
 
+        if _n == 0 {
+            self.puts("0");
+            return;
+        }
+
         while n > 0 {
             nn = nn * RADIX as u32 + (n % RADIX as u32);
             n = n / RADIX as u32;
@@ -71,6 +76,11 @@ impl UART {
     }
 
     pub fn puti32(&self, _n: i32) {
+
+        if _n == 0 {
+            self.puts("0");
+            return;
+        }
 
         if _n < 0 {
             self.putc('-');
