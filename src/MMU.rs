@@ -40,6 +40,15 @@ impl MMU {
         }
     }
 
+    pub fn invalidate_tlb(&self)
+    {
+        unsafe {
+        asm!("tlbi vmalle1is\n\t
+              isb\n\t
+              dsb sy" ::::);
+        }
+    }
+
     pub fn enable(&self) {
         unsafe {
         asm!("mrs x0, sctlr_el1\n\t
