@@ -24,6 +24,34 @@ pub struct MMU;
 
 impl MMU {
 
+    pub fn setup_tcr_el1(&self)
+    {
+        let mut tcr_el1: u64;
+
+        unsafe {
+        asm!("mrs $0, tcr_el1" :"=r"(tcr_el1)::);
+        }
+
+        UART::UART.putx64(tcr_el1);
+        UART::UART.puts("\n");
+
+        // set t1sz[16 - 21] = 0x19
+        // span 0xFFFFFF8000000000 - 0xFFFFFFFFFFFFFFFF (512 GB)
+        tcr_el1 = tcr_el1 & !(0b000000 << 16);
+        tcr_el1 = tcr_el1 | (0x19 << 16);
+
+        // set tg1[30 - 31] = 0b10
+        tcr_el1 = tcr_el1 & !(0x00 << 30);
+        tcr_el1 = tcr_el1 | (0b10 << 30);
+
+        UART::UART.putx64(tcr_el1);
+        UART::UART.puts("\n");
+
+        unsafe {
+        asm!("msr tcr_el1, $0" ::"r"(tcr_el1):);
+        }
+    }
+
     pub fn setup_ttbr0_el1(&self, ttbr: u64)
     {
         unsafe {
