@@ -39,15 +39,20 @@ pub extern "C" fn _start() -> ! {
 
     UART::UART.puts("Currently at EL");
 
-    let mut el = CPU::CPU.get_current_EL();
-    UART::UART.putu32(el as u32);
+    let mut el: u32 = CPU::CPU.get_current_EL() as u32;
+    UART::UART.putu32(el);
     UART::UART.puts("\n");
 
     assert_eq!(el, 3);
 
-    CPU::CPU.goto_EL(CPU::EL::EL2t);
+    CPU::CPU.goto_EL(CPU::EL::EL1t);
 
     UART::UART.puts("And now at EL");
+    el = CPU::CPU.get_current_EL() as u32;
+    UART::UART.putu32(el);
+    UART::UART.puts("\n");
+
+    assert_eq!(el, 1);
 
     el = CPU::CPU.get_current_EL();
     UART::UART.putu32(el as u32);
