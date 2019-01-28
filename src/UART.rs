@@ -6,10 +6,6 @@ impl UART {
     const PL011_UARTFR: u32 = UART::PL011_UART0 + 0x18; // UART0 Flag register
     const UART_TXFE: u8 = (1<<7);                       // TXFE - Transmit FIFO empty
 
-    pub fn new() -> UART {
-        UART
-    }
-
     fn putc(&self, c: char) {
 
         let txfe_ptr: *const u8 = UART::PL011_UARTFR as *const u8;
