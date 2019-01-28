@@ -27,14 +27,16 @@ impl MMU {
     pub fn setup_ttbr0_el1(&self, ttbr: u64)
     {
         unsafe {
-        asm!("msr ttbr0_el1, $0\n\t" ::"r"(ttbr)::);
+        asm!("msr ttbr0_el1, $0\n\t
+              isb" ::"r"(ttbr)::);
         }
     }
 
     pub fn setup_ttbr1_el1(&self, ttbr: u64)
     {
         unsafe {
-        asm!("msr ttbr1_el1, $0" ::"r"(ttbr)::);
+        asm!("msr ttbr1_el1, $0\n\t
+              isb" ::"r"(ttbr)::);
         }
     }
 
