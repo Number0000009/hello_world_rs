@@ -6,7 +6,7 @@
 `curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly`\
 `source $HOME/.cargo/env`\
 `rustup component add rust-src`\
-`cargo install cargo-xbuild`\
+`cargo install cargo-xbuild`
 
 ## Build
 
