@@ -1,5 +1,6 @@
 [build]
 rustflags = [
     "-Clink-arg=-Tlinker.lds",
-    "-Ctarget-feature=+strict-align"
+    "-Ctarget-feature=+strict-align",
+    "-Zexternal-macro-backtrace"
 ]
