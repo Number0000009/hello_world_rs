@@ -1,5 +1,19 @@
 pub struct MMU;
 
+use super::UART;
+
+// Rust enums cannot have duplicates
+pub enum DescriptorType {
+    ONE = 0b01,
+    THREE = 0b11,
+}
+
+impl DescriptorType {
+    pub const BLOCK : DescriptorType = DescriptorType::ONE;
+    pub const TABLE : DescriptorType = DescriptorType::THREE;
+    pub const PAGE : DescriptorType = DescriptorType::THREE;
+}
+
 /* TODO:
  * ````
  * TCR_EL1.Tx2SZ = 0x10 - Initial lookup table level = 0
@@ -21,6 +35,33 @@ pub struct MMU;
  * Descriptor lvl 2 (D4-15):
  * 2e000003 00000000 [level 2 table (D4-15)] -> xxxxx713 00000000 [4KB page (D4-16)]
  */
+
+bitfield! {
+    #[derive(Copy, Clone)]
+    pub struct descriptor_table_lvl2(u64);
+    u8;
+    pub desc_type, set_type: 1, 0;
+    ignored, _: 11, 2;
+//  res0, _: 11, 12;                          // Absent for 4KB
+    pub u64, next_level_table_addr, set_next_level_table_addr: 47, 12;
+    res0, _: 51, 48;
+    ignored2, _: 58, 52;
+    PXNTable, _: 59;
+    XNTable, _: 60;
+    APTable, _: 62, 61;
+    NSTable, _: 63;
+}
+
+bitfield! {
+    pub struct descriptor_page_4k_lvl3(u64);
+    u8;
+    pub desc_type, set_type: 1, 0;
+    pub lower_attrs, set_lower_attrs: 11, 2;
+    pub TA, set_TA: 15, 12;                         // bits[51:48] of the page address
+    pub u32, output_addr, set_output_addr: 47, 16;
+    res0, _: 50, 48;
+    pub upper_attrs, set_upper_attrs: 63, 51;
+}
 
 impl MMU {
 
@@ -84,6 +125,25 @@ impl MMU {
               isb"
             :::"x0" :);
         }
+    }
+
+    pub fn dump_descriptor(&self, tt: &descriptor_table_lvl2)
+    {
+        UART::UART.puts("Type:");
+        UART::UART.putx32(tt.desc_type() as u32);
+        UART::UART.puts("\nNext level table address:");
+        UART::UART.putx64(tt.next_level_table_addr());
+        UART::UART.puts("\n");
+    }
+
+    pub fn set_type(&self, mut tt: descriptor_table_lvl2, _type: DescriptorType)
+    {
+        tt.set_type(_type as u8);
+    }
+
+    pub fn set_next_level_table_addr(&self, mut tt: descriptor_table_lvl2, addr: u64)
+    {
+        tt.set_next_level_table_addr(addr);
     }
 
     // u32 because we'll be using TCR_EL1.IPS = 0b000 (32 bit)

@@ -3,5 +3,8 @@ name = "hwrs"
 version = "0.0.1"
 edition = "2018"
 
+[dependencies]
+bitfield = "0.13.1"
+
 [package.metadata.cargo-xbuild]
 sysroot_path = "../xbuild_sysroot"
