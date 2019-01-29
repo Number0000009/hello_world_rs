@@ -1,6 +1,7 @@
 #![feature(lang_items, start)]
 #![feature(asm)]
 #![feature(global_asm)]
+#![feature(core_intrinsics)]
 
 #![no_std]
 #![no_main]
@@ -21,22 +22,33 @@ extern crate bitfield;
 
 const NUM_ENTRIES_4KB: usize = 512;
 
+// TODO: probably u64 is better as it's uniform for all descriptor formats
 #[repr(C, align(0x1000))]
-struct PageTable {
-    entries: [MMU::descriptor_table_lvl2; NUM_ENTRIES_4KB]
+struct PageTable012 {
+    entries: [MMU::descriptor_table_lvl012; NUM_ENTRIES_4KB]
 }
 
-static mut PageTableLvl2: PageTable = PageTable {
-    entries: [MMU::descriptor_table_lvl2(0x4242424242424242); NUM_ENTRIES_4KB]
+#[repr(C, align(0x1000))]
+struct PageTable3 {
+    entries: [MMU::descriptor_page_4k_lvl3; NUM_ENTRIES_4KB]
+}
+
+//T1SZ=25 -> lookup starts at Level 1
+//static mut PageTableLvl0: PageTable012 = PageTable012 {
+//    entries: [MMU::descriptor_table_lvl012(0); NUM_ENTRIES_4KB]
+//};
+
+static mut PageTableLvl1: PageTable012 = PageTable012 {
+    entries: [MMU::descriptor_table_lvl012(0); NUM_ENTRIES_4KB]
 };
 
-/*
-struct PageTableLvl3 {
-    entries: [0; NUM_ENTRIES_4KB]
-}
+static mut PageTableLvl2: PageTable012 = PageTable012 {
+    entries: [MMU::descriptor_table_lvl012(0); NUM_ENTRIES_4KB]
+};
 
-
-
+static mut PageTableLvl3: PageTable3 = PageTable3 {
+    entries: [MMU::descriptor_page_4k_lvl3(0); NUM_ENTRIES_4KB]
+};
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -59,9 +71,15 @@ trait BaseAddr {
     fn get_base_addr(&self) -> u64;
 }
 
-impl BaseAddr for [MMU::descriptor_table_lvl2; 512] {
+impl BaseAddr for [MMU::descriptor_table_lvl012; 512] {
     fn get_base_addr(&self) -> u64 {
-        self as *const MMU::descriptor_table_lvl2 as u64
+        self as *const MMU::descriptor_table_lvl012 as u64
+    }
+}
+
+impl BaseAddr for [MMU::descriptor_page_4k_lvl3; 512] {
+    fn get_base_addr(&self) -> u64 {
+        self as *const MMU::descriptor_page_4k_lvl3 as u64
     }
 }
 
@@ -86,25 +104,41 @@ pub extern "C" fn _start() -> ! {
     UART::UART.puts("\n");
 
     assert_eq!(el, 1);
-/*
-    let mut tt_lvl2 = MMU::descriptor_table_lvl2(0x4242424242424242);
-    tt_lvl2.set_type(MMU::DescriptorType::TABLE as u8);
-    tt_lvl2.set_next_level_table_addr(0xffffffff);
-*/
-/*
-    MMU::MMU.dump_descriptor(&tt);
-*/
-
-//    let tt_lvl2: MMU::descriptor_table_lvl2 = &A.alloc(Layout::new::<MMU::descriptor_table_lvl2>()) as MMU::descriptor_table_lvl2;
-//    assert!(tt_lvl2.is_null());
-
-//    MMU::MMU.dump_descriptor(&tt_lvl2);
 
     MMU::MMU.setup_tcr_el1();
 
     unsafe {
-    let ttbr: u64 = PageTableLvl2.entries.get_base_addr();
+    PageTableLvl3.entries[0].set_type(MMU::DescriptorType::PAGE as u8);
+    PageTableLvl3.entries[0].set_lower_attrs(0x71);
+    PageTableLvl3.entries[0].set_output_addr(0x80000000);
 
+    PageTableLvl2.entries[0].set_type(MMU::DescriptorType::TABLE as u8);
+    PageTableLvl2.entries[0].set_next_level_table_addr(PageTableLvl3.entries.get_base_addr());
+
+    PageTableLvl1.entries[0].set_type(MMU::DescriptorType::TABLE as u8);
+    PageTableLvl1.entries[0].set_next_level_table_addr(PageTableLvl2.entries.get_base_addr());
+
+//T1SZ=25 -> lookup starts at Level 1
+//    PageTableLvl0.entries[0].set_type(MMU::DescriptorType::TABLE as u8);
+//    PageTableLvl0.entries[0].set_next_level_table_addr(PageTableLvl1.entries.get_base_addr());
+
+//T1SZ=25 -> lookup starts at Level 1
+//    PageTableLvl0.entries[0].dump_descriptor();
+    PageTableLvl1.entries[0].dump_descriptor();
+    PageTableLvl2.entries[0].dump_descriptor();
+    PageTableLvl3.entries[0].dump_descriptor();
+
+    PageTableLvl3.entries[1].set_type(MMU::DescriptorType::PAGE as u8);
+    PageTableLvl3.entries[1].set_lower_attrs(0x71);
+    PageTableLvl3.entries[1].set_output_addr(0x81000000);
+
+    PageTableLvl3.entries[1].dump_descriptor();
+
+//T1SZ=25 -> lookup starts at Level 1
+//    let ttbr: u64 = PageTableLvl0.entries.get_base_addr();
+    let ttbr: u64 = PageTableLvl1.entries.get_base_addr();
+
+    UART::UART.puts("TTBR1_EL1: ");
     UART::UART.putx64(ttbr);
     UART::UART.puts("\n");
 

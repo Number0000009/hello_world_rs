@@ -41,14 +41,15 @@ impl DescriptorType {
  * 2e000003 00000000 [level 2 table (D4-15)] -> xxxxx713 00000000 [4KB page (D4-16)]
  */
 
+// D5-15
 bitfield! {
     #[derive(Copy, Clone)]
-    pub struct descriptor_table_lvl2(u64);
+    pub struct descriptor_table_lvl012(u64);
     u8;
-    pub desc_type, set_type: 1, 0;
+    pub desc_type, _set_type: 1, 0;
     ignored, _: 11, 2;
-//  res0, _: 11, 12;                          // Absent for 4KB
-    pub u64, next_level_table_addr, set_next_level_table_addr: 47, 12;
+//  res0, _: 11, 12;                             // absent for 4KB
+    pub u64, next_level_table_addr, _set_next_level_table_addr: 47, 12;
     res0, _: 51, 48;
     ignored2, _: 58, 52;
     PXNTable, _: 59;
@@ -57,15 +58,77 @@ bitfield! {
     NSTable, _: 63;
 }
 
+// D5-17
 bitfield! {
+    #[derive(Copy, Clone)]
     pub struct descriptor_page_4k_lvl3(u64);
     u8;
-    pub desc_type, set_type: 1, 0;
-    pub lower_attrs, set_lower_attrs: 11, 2;
+    pub desc_type, _set_type: 1, 0;
+// TODO: split lower_attrs into struct lower_attrs
+    pub u16, lower_attrs, _set_lower_attrs: 11, 2;
     pub TA, set_TA: 15, 12;                         // bits[51:48] of the page address
-    pub u32, output_addr, set_output_addr: 47, 16;
+    pub u32, output_addr, _set_output_addr: 47, 16;
     res0, _: 50, 48;
-    pub upper_attrs, set_upper_attrs: 63, 51;
+    pub upper_attrs, _set_upper_attrs: 63, 51;
+}
+
+impl descriptor_table_lvl012 {
+    pub fn dump_descriptor(&self) {
+        unsafe {
+        UART::UART.puts(core::intrinsics::type_name::<Self>());
+        }
+        UART::UART.puts("\nType: ");
+        UART::UART.putx32(self.desc_type() as u32);
+        UART::UART.puts("\nNext level table address: ");
+        UART::UART.putx64(self.next_level_table_addr() << 12);
+        UART::UART.puts("\nRaw: ");
+        unsafe {
+        UART::UART.putx64(core::mem::transmute::<descriptor_table_lvl012,u64>(*self));
+        }
+        UART::UART.puts("\n");
+    }
+
+    pub fn set_type(&mut self, t: u8) {
+        self._set_type(t);
+    }
+
+    pub fn set_next_level_table_addr(&mut self, addr: u64)
+    {
+        self._set_next_level_table_addr(addr >> 12);        // D5-15
+    }
+}
+
+impl descriptor_page_4k_lvl3 {
+    pub fn dump_descriptor(&self) {
+        unsafe {
+        UART::UART.puts(core::intrinsics::type_name::<Self>());
+        }
+        UART::UART.puts("\nType: ");
+        UART::UART.putx32(self.desc_type() as u32);
+        UART::UART.puts("\nOutput address: ");
+        UART::UART.putx32(self.output_addr() << 16);
+        UART::UART.puts("\nLower attributes: ");
+        UART::UART.putx32((self.lower_attrs() as u32) << 2);  //D5-17
+        UART::UART.puts("\nRaw: ");
+        unsafe {
+        UART::UART.putx64(core::mem::transmute::<descriptor_page_4k_lvl3,u64>(*self));
+        }
+        UART::UART.puts("\n");
+    }
+
+    pub fn set_type(&mut self, t: u8) {
+        self._set_type(t);
+    }
+
+    pub fn set_output_addr(&mut self, addr: u32)
+    {
+        self._set_output_addr(addr >> 16);                  // D5-17
+    }
+
+    pub fn set_lower_attrs(&mut self, attrs: u8){
+        self._set_lower_attrs((attrs as u16) << 2);         // D5-17
+    }
+
 }
 
 impl MMU {
@@ -149,25 +212,6 @@ impl MMU {
               isb"
             :::"x0" :);
         }
-    }
-
-    pub fn dump_descriptor(&self, tt: &descriptor_table_lvl2)
-    {
-        UART::UART.puts("Type:");
-        UART::UART.putx32(tt.desc_type() as u32);
-        UART::UART.puts("\nNext level table address:");
-        UART::UART.putx64(tt.next_level_table_addr());
-        UART::UART.puts("\n");
-    }
-
-    pub fn set_type(&self, mut tt: descriptor_table_lvl2, _type: DescriptorType)
-    {
-        tt.set_type(_type as u8);
-    }
-
-    pub fn set_next_level_table_addr(&self, mut tt: descriptor_table_lvl2, addr: u64)
-    {
-        tt.set_next_level_table_addr(addr);
     }
 
     // u32 because we'll be using TCR_EL1.IPS = 0b000 (32 bit)
