@@ -14,10 +14,15 @@ impl DescriptorType {
     pub const PAGE : DescriptorType = DescriptorType::THREE;
 }
 
-/* TODO:
+/* MMU 101:
  * ````
+ * 4 levels of translation tables: 0 -> 1 -> 2 -> 3
  * TCR_EL1.Tx2SZ = 0x10 - Initial lookup table level = 0
- * TCR_EL1.Tx2SZ = 0x19 - Initial lookup table level = 1
+ * TCR_EL1.Tx2SZ = 0x19 - Initial lookup table level = 1 (so for a given TCR_EL1.T1SZ, .TG1 and .IPS configuration and 4KB pages we need 1, 2, 3 levels,
+ *                                                        spoiler: we could use blocks of a bigger size as spans of 4KB pages and have less levels,
+ *                                                        i. e. 2 levels and 2MB blocks as many 4KB pages as one entry, but this would be more rigid
+ *                                                        and less fun. On the other hand having all 4 levels is too much either and wouldn't be
+ *                                                        much fun too, so we've chosen 3 levels.)
  * (D4-11)
  * TCR_EL1.TxSZ = 16 -> 0 - 0_FFFF_FFFF_FFFF
  * (Address Space size = 2^(64 - TxSZ))
@@ -77,7 +82,26 @@ impl MMU {
         UART::UART.puts("\n");
 
         // set t1sz[16 - 21] = 0x19
-        // span 0xFFFFFF8000000000 - 0xFFFFFFFFFFFFFFFF (512 GB)
+        // TTBR1_EL1 range 0xFFFFFF8000000000 - 0xFFFFFFFFFFFFFFFF (512 GB)
+        // -0xFFFFFF8000000000 - 0xFFFFFF803FFFFFFF (1 GB) (Level 1 table)
+        // -0xFFFFFF8000000000 (Level 1 table)
+        //   -0xFFFFFF8000000000 - 0xFFFFFF80001FFFFF (2 MB) (Level 2 table)
+        //   -0xFFFFFF8000000000 (Level 2 table)
+        //     -0xFFFFFF8000000000 - 0xFFFFFF8000000FFF (4 KB) (Level 3 table)
+        //     -0xFFFFFF8000000000 (Level 3 table)
+        //     -0xFFFFFF8000001000 (Level 3 table)
+        //     -0xFFFFFF8000002000 (Level 3 table)
+        //     ...
+        //   -0xFFFFFF8000200000 - 0xFFFFFF80003FFFFF (2 MB) (Level 2 table)
+        //   -0xFFFFFF8000200000 (Level 2 table)
+        //     -0xFFFFFF8000200000 - 0xFFFFFF8000000FFF (4 KB) (Level 3 table)
+        //     -0xFFFFFF8000200000 (Level 3 table)
+        //     -0xFFFFFF8000201000 (Level 3 table)
+        //     -0xFFFFFF8000202000 (Level 3 table)
+        //     ...
+        //   -0xFFFFFF8000300000 - 0xFFFFFF8000000FFF (4 KB) (Level 3 table)
+        // +0xFFFFFF8040000000 (Level 1 table)
+        // +0xFFFFFF8080000000 (Level 1 table)
         tcr_el1 = tcr_el1 & !(0b000000 << 16);
         tcr_el1 = tcr_el1 | (0x19 << 16);
 
