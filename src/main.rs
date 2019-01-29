@@ -11,10 +11,6 @@
 
 use core::panic::PanicInfo;
 
-//use core::alloc::GlobalAlloc;
-//use core::alloc::Layout;
-//use core::ptr::null_mut;
-
 mod LEDs;
 mod UART;
 mod CPU;
@@ -38,22 +34,9 @@ static mut PageTableLvl2: PageTable = PageTable {
 struct PageTableLvl3 {
     entries: [0; NUM_ENTRIES_4KB]
 }
-*/
-/*
-struct Allocator;
 
-unsafe impl GlobalAlloc for Allocator {
-    unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
-        null_mut()
-    }
 
-    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
-    }
-}
 
-#[global_allocator]
-static A: Allocator = Allocator;
-*/
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
