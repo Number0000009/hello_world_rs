@@ -18,11 +18,11 @@ impl DescriptorType {
  * ````
  * 4 levels of translation tables: 0 -> 1 -> 2 -> 3
  * TCR_EL1.Tx2SZ = 0x10 - Initial lookup table level = 0
- * TCR_EL1.Tx2SZ = 0x19 - Initial lookup table level = 1 (so for a given TCR_EL1.T1SZ, .TG1 and .IPS configuration and 4KB pages we need 1, 2, 3 levels,
- *                                                        spoiler: we could use blocks of a bigger size as spans of 4KB pages and have less levels,
- *                                                        i. e. 2 levels and 2MB blocks as many 4KB pages as one entry, but this would be more rigid
- *                                                        and less fun. On the other hand having all 4 levels is too much either and wouldn't be
- *                                                        much fun too, so we've chosen 3 levels.)
+ * TCR_EL1.Tx2SZ = 0x19 - Initial lookup table level = 1 (so to 4KB pages we need 1, 2, 3 levels,
+                                                          spoiler: we could used blocks of bigger size as spans of 4KB pages and have less levels,
+                                                          i. e. 2 levels and 2MB blocks, but this would be more rigid and less fun.
+                                                          On the other hand having all 4 levels is too much either and wouldn't be fun too,
+                                                          so we've chosen 3 levels.)
  * (D4-11)
  * TCR_EL1.TxSZ = 16 -> 0 - 0_FFFF_FFFF_FFFF
  * (Address Space size = 2^(64 - TxSZ))
