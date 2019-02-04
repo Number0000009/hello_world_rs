@@ -16,8 +16,10 @@ mod LEDs;
 mod UART;
 mod CPU;
 mod MMU;
+mod regs_defs;
 
 #[macro_use]
+mod macro_inst;
 
 #[macro_use]
 extern crate bitfield;
@@ -57,6 +59,10 @@ impl BaseAddr for [MMU::descriptor_page_4k_lvl3; 512] {
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+
+    inst_a!(regs_defs::REG_A, 0);
+    inst_b!(0x666);
+    inst_c!(0x666);
 
     CPU::CPU.init();
 

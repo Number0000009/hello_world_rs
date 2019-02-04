@@ -6,12 +6,14 @@
 `curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly`\
 `source $HOME/.cargo/env`\
 `rustup component add rust-src`\
-`cargo install cargo-xbuild`
+(`rustup component add rustfmt`)\
+`cargo install cargo-xbuild`\
+(`cargo install bindgen`)
 
 ## Build
-
-(cargo clean)\
-cargo xbuild --target=aarch64-unknown-none --release (--verbose)
+(`bindgen ../../include/rmu_defs.h > ./src/rmu_defs.rs`)\
+(`cargo clean`)\
+`cargo xbuild --target=aarch64-unknown-none --release` (`--verbose`)
 
 ## Run
 
