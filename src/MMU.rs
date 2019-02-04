@@ -1,4 +1,5 @@
-pub struct MMU;
+pub struct EL01;
+pub struct EL2;
 
 use super::UART;
 
@@ -14,7 +15,37 @@ impl DescriptorType {
     pub const PAGE : DescriptorType = DescriptorType::THREE;
 }
 
-/* MMU 101:
+const NUM_ENTRIES_4KB: usize = 512;
+
+// TODO: probably u64 is better as it's uniform for all descriptor formats
+#[repr(C, align(0x1000))]
+pub struct PageTable012 {
+    pub entries: [descriptor_table_lvl012; NUM_ENTRIES_4KB]
+}
+
+#[repr(C, align(0x1000))]
+pub struct PageTable3 {
+    pub entries: [descriptor_page_4k_lvl3; NUM_ENTRIES_4KB]
+}
+
+pub static mut PageTableLvl1: PageTable012 = PageTable012 {
+    entries: [descriptor_table_lvl012(0); NUM_ENTRIES_4KB]
+};
+
+pub static mut PageTableLvl2: PageTable012 = PageTable012 {
+    entries: [descriptor_table_lvl012(0); NUM_ENTRIES_4KB]
+};
+
+pub static mut PageTableLvl3: PageTable3 = PageTable3 {
+    entries: [descriptor_page_4k_lvl3(0); NUM_ENTRIES_4KB]
+};
+
+//T1SZ=25 -> lookup starts at Level 1
+//static mut PageTableLvl0: PageTable012 = PageTable012 {
+//    entries: [MMU::descriptor_table_lvl012(0); NUM_ENTRIES_4KB]
+//};
+
+/* MMU101:
  * ````
  * 4 levels of translation tables: 0 -> 1 -> 2 -> 3
  * TCR_EL1.Tx2SZ = 0x10 - Initial lookup table level = 0
@@ -131,17 +162,17 @@ impl descriptor_page_4k_lvl3 {
 
 }
 
-impl MMU {
+impl EL01 {
 
-    pub fn setup_tcr_el1(&self)
+    pub fn setup_tcr(&self)
     {
-        let mut tcr_el1: u64;
+        let mut tcr: u64;
 
         unsafe {
-        asm!("mrs $0, tcr_el1" :"=r"(tcr_el1)::);
+        asm!("mrs $0, tcr_el1" :"=r"(tcr)::);
         }
 
-        UART::UART.putx64(tcr_el1);
+        UART::UART.putx64(tcr);
         UART::UART.puts("\n");
 
         // set t1sz[16 - 21] = 0x19
@@ -165,22 +196,22 @@ impl MMU {
         //   -0xFFFFFF8000300000 - 0xFFFFFF8000000FFF (4 KB) (Level 3 table)
         // +0xFFFFFF8040000000 (Level 1 table)
         // +0xFFFFFF8080000000 (Level 1 table)
-        tcr_el1 = tcr_el1 & !(0b000000 << 16);
-        tcr_el1 = tcr_el1 | (0x19 << 16);
+        tcr = tcr & !(0b000000 << 16);
+        tcr = tcr | (0x19 << 16);
 
         // set tg1[30 - 31] = 0b10
-        tcr_el1 = tcr_el1 & !(0x00 << 30);
-        tcr_el1 = tcr_el1 | (0b10 << 30);
+        tcr = tcr & !(0x00 << 30);
+        tcr = tcr | (0b10 << 30);
 
-        UART::UART.putx64(tcr_el1);
+        UART::UART.putx64(tcr);
         UART::UART.puts("\n");
 
         unsafe {
-        asm!("msr tcr_el1, $0" ::"r"(tcr_el1):);
+        asm!("msr tcr_el1, $0" ::"r"(tcr):);
         }
     }
 
-    pub fn setup_ttbr0_el1(&self, ttbr: u64)
+    pub fn setup_ttbr0(&self, ttbr: u64)
     {
         unsafe {
         asm!("msr ttbr0_el1, $0\n\t
@@ -188,7 +219,7 @@ impl MMU {
         }
     }
 
-    pub fn setup_ttbr1_el1(&self, ttbr: u64)
+    pub fn setup_ttbr1(&self, ttbr: u64)
     {
         unsafe {
         asm!("msr ttbr1_el1, $0\n\t
@@ -215,7 +246,7 @@ impl MMU {
     }
 
     // u32 because we'll be using TCR_EL1.IPS = 0b000 (32 bit)
-    pub fn translate_el1_s1r(&self, input_addr: u64) -> u32 {
+    pub fn translate_s1r(&self, input_addr: u64) -> u32 {
         let output_addr: u64;
 
         unsafe {
@@ -225,6 +256,76 @@ impl MMU {
         }
 
         assert_eq!(output_addr & 1, 1);                // PAR_EL1.F
+
+        (output_addr & 0x0fff_ffff_ffff_ffff).wrapping_shr(12) as u32
+    }
+}
+
+impl EL2 {
+
+    pub fn setup_tcr(&self)
+    {
+        let mut tcr: u64;
+
+        unsafe {
+        asm!("mrs $0, tcr_el2" :"=r"(tcr)::);
+        }
+
+        UART::UART.putx64(tcr);
+        UART::UART.puts("\n");
+
+        tcr = tcr & !(0b000000 << 16);
+        tcr = tcr | (0x19 << 16);
+
+        // set tg1[30 - 31] = 0b10
+        tcr = tcr & !(0x00 << 30);
+        tcr = tcr | (0b10 << 30);
+
+        UART::UART.putx64(tcr);
+        UART::UART.puts("\n");
+
+        unsafe {
+        asm!("msr tcr_el2, $0" ::"r"(tcr):);
+        }
+    }
+
+    pub fn setup_ttbr0(&self, ttbr: u64)
+    {
+        unsafe {
+        asm!("msr ttbr0_el2, $0\n\t
+              isb" ::"r"(ttbr)::);
+        }
+    }
+
+    pub fn invalidate_tlb(&self)
+    {
+        unsafe {
+        asm!("tlbi vmalle2is\n\t
+              isb\n\t
+              dsb sy" ::::);
+        }
+    }
+
+    pub fn enable(&self) {
+        unsafe {
+        asm!("mrs x0, sctlr_el2\n\t
+              orr x0, x0, #1\n\t    // SCTLR_EL2.M
+              isb"
+            :::"x0" :);
+        }
+    }
+
+    // u32 because we'll be using TCR_EL2.IPS = 0b000 (32 bit)
+    pub fn translate_s1r(&self, input_addr: u64) -> u32 {
+        let output_addr: u64;
+
+        unsafe {
+        asm!("at s1e12r, $1\n\t
+              mrs $0, par_el2"
+            :"=r"(output_addr):"r"(input_addr)::);
+        }
+
+        assert_eq!(output_addr & 1, 1);                // PAR_EL2.F
 
         (output_addr & 0x0fff_ffff_ffff_ffff).wrapping_shr(12) as u32
     }
