@@ -7,4 +7,4 @@ edition = "2018"
 bitfield = "0.13.1"
 
 [package.metadata.cargo-xbuild]
-sysroot_path = "../xbuild_sysroot"
+sysroot_path = "xbuild_sysroot"
