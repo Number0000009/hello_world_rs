@@ -2,8 +2,6 @@ STACK_START = 0x80010000;
 
 MEMORY { .SRAM : ORIGIN = 0x2e000000, LENGTH = 0xffffff }
 
-OUTPUT_FORMAT("elf64-littleaarch64")
-OUTPUT_ARCH(aarch64)
 ENTRY(setup_stack)
 SECTIONS
 {
@@ -40,6 +38,5 @@ SECTIONS
         /DISCARD/ : { *(.interp*) }
         /DISCARD/ : { *(.gnu*) }
         /DISCARD/ : { *(.note*) }
-
-        init_end = .;
+        /DISCARD/ : { *(.eh_frame*) }
 }
