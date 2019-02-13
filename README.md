@@ -22,3 +22,7 @@
 ## TODO
 
 Everything else.
+
+## Notes
+Output binary is quite huge, to strip it down a bit:\
+`aarch64-linux-gnu-objcopy -O binary ./target/aarch64-unknown-none/release/hwrs`
